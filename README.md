@@ -20,6 +20,7 @@ deno install jsr:@hazae41/wasm
 - Rust-like patterns
 - No validation done
 - Easily edit .wasm
+- Latest specification
 
 ## Usage 
 
