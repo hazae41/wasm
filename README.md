@@ -20,3 +20,21 @@ deno install jsr:@hazae41/wasm
 - Rust-like patterns
 - No validation done
 - Easily edit .wasm
+
+## Usage 
+
+```tsx
+import * as Wasm from "@hazae41/wasm"
+
+const module = Readable.readFromBytesOrThrow(Wasm.Module, readFileSync("./mod.wasm"))
+
+const imports = module.body.sections.find(section => section.kind === Wasm.ImportSection.kind)! as Wasm.ImportSection
+
+console.log(imports)
+
+const start = module.body.sections.find(section => section.kind === Wasm.StartSection.kind)! as Wasm.StartSection
+
+start.funcidx = 3 // Change start function
+
+writeFileSync("./mod.wasm", Writable.writeToBytesOrThrow(module))
+```
