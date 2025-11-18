@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "@hazae41/wasm",
-  "version": "1.1.11",
+  "version": "0.0.0",
   "description": "WebAssembly Binary Format (.wasm) decoder-modifier-encoder for TypeScript",
   "repository": "github:hazae41/wasm",
   "author": "hazae41",
