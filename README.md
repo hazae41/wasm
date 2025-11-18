@@ -32,7 +32,7 @@ const module = Readable.readFromBytesOrThrow(Wasm.Module, readFileSync("./mod.wa
 
 const imports = module.body.sections.find(section => section.kind === Wasm.ImportSection.kind)! as Wasm.ImportSection
 
-console.log(imports)
+console.log(imports) // Show all imports
 
 const start = module.body.sections.find(section => section.kind === Wasm.StartSection.kind)! as Wasm.StartSection
 
