@@ -25,6 +25,8 @@ deno install jsr:@hazae41/wasm
 
 ```tsx
 import * as Wasm from "@hazae41/wasm"
+import { Readable, Writable } from "@hazae41/binary"
+import { readFileSync, writeFileSync } from "node:fs"
 
 const module = Readable.readFromBytesOrThrow(Wasm.Module, readFileSync("./mod.wasm"))
 
