@@ -1,6 +1,6 @@
 # WASM
 
-WebAssembly Binary Format (.wasm) encoder/decoder for TypeScript
+WebAssembly Binary Format (.wasm) decoder-modifier-encoder for TypeScript
 
 ```bash
 npm install @hazae41/wasm
