@@ -1,6 +1,8 @@
+// deno-lint-ignore-file no-namespace
+
+import type { Nullable } from "@/libs/nullable/mod.ts";
 import { Readable, type Writable } from "@hazae41/binary";
 import { Cursor } from "@hazae41/cursor";
-import type { Nullable } from "../../libs/nullable/mod.ts";
 
 export class Module {
 
@@ -9,22 +11,22 @@ export class Module {
     public body: Body
   ) { }
 
-  sizeOrThrow(): number {
-    return this.head.sizeOrThrow() + this.body.sizeOrThrow()
+  size(): number {
+    return this.head.size() + this.body.size()
   }
 
-  writeOrThrow(cursor: Cursor) {
-    this.head.writeOrThrow(cursor)
-    this.body.writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    this.head.write(cursor)
+    this.body.write(cursor)
   }
 
 }
 
 export namespace Module {
 
-  export function readOrThrow(cursor: Cursor): Module {
-    const head = Head.readOrThrow(cursor)
-    const body = Body.readOrThrow(cursor)
+  export function read(cursor: Cursor): Module {
+    const head = Head.read(cursor)
+    const body = Body.read(cursor)
 
     return new Module(head, body)
   }
@@ -37,26 +39,26 @@ export class Head {
     public version: number
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return 4 + 4
   }
 
-  writeOrThrow(cursor: Cursor) {
-    cursor.writeUint32OrThrow(1836278016, true)
-    cursor.writeUint32OrThrow(this.version, true)
+  write(cursor: Cursor) {
+    cursor.writeUint32(1836278016, true)
+    cursor.writeUint32(this.version, true)
   }
 
 }
 
 export namespace Head {
 
-  export function readOrThrow(cursor: Cursor): Head {
-    const magic = cursor.readUint32OrThrow(true)
+  export function read(cursor: Cursor): Head {
+    const magic = cursor.readUint32(true)
 
     if (magic !== 1836278016)
       throw new Error("Invalid magic number")
 
-    const version = cursor.readUint32OrThrow(true)
+    const version = cursor.readUint32(true)
 
     if (version !== 1)
       throw new Error("Unsupported version")
@@ -72,22 +74,22 @@ export class Body {
     public sections: Section[]
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
     for (const section of this.sections)
-      size += 1 + new LEB128.U32(section.sizeOrThrow()).sizeOrThrow() + section.sizeOrThrow()
+      size += 1 + new LEB128.U32(section.size()).size() + section.size()
 
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
+  write(cursor: Cursor) {
     for (const section of this.sections) {
-      cursor.writeUint8OrThrow(section.kind)
+      cursor.writeUint8(section.kind)
 
-      new LEB128.U32(section.sizeOrThrow()).writeOrThrow(cursor)
+      new LEB128.U32(section.size()).write(cursor)
 
-      section.writeOrThrow(cursor)
+      section.write(cursor)
     }
   }
 
@@ -95,18 +97,18 @@ export class Body {
 
 export namespace Body {
 
-  export function readOrThrow(cursor: Cursor): Body {
+  export function read(cursor: Cursor): Body {
     const sections = new Array<Section>()
 
     while (cursor.remaining > 0) {
-      const kind = cursor.readUint8OrThrow()
+      const kind = cursor.readUint8()
 
-      const size = LEB128.U32.readOrThrow(cursor)
+      const size = LEB128.U32.read(cursor)
 
-      const data = cursor.readOrThrow(size.value)
+      const data = cursor.read(size.value)
 
       if (kind === CustomSection.kind) {
-        const section = Readable.readFromBytesOrThrow(CustomSection, data)
+        const section = Readable.readFromBytes(CustomSection, data)
 
         sections.push(section)
 
@@ -114,7 +116,7 @@ export namespace Body {
       }
 
       if (kind === TypeSection.kind) {
-        const section = Readable.readFromBytesOrThrow(TypeSection, data)
+        const section = Readable.readFromBytes(TypeSection, data)
 
         sections.push(section)
 
@@ -122,7 +124,7 @@ export namespace Body {
       }
 
       if (kind === ImportSection.kind) {
-        const section = Readable.readFromBytesOrThrow(ImportSection, data)
+        const section = Readable.readFromBytes(ImportSection, data)
 
         sections.push(section)
 
@@ -130,7 +132,7 @@ export namespace Body {
       }
 
       if (kind === FunctionSection.kind) {
-        const section = Readable.readFromBytesOrThrow(FunctionSection, data)
+        const section = Readable.readFromBytes(FunctionSection, data)
 
         sections.push(section)
 
@@ -138,7 +140,7 @@ export namespace Body {
       }
 
       if (kind === TableSection.kind) {
-        const section = Readable.readFromBytesOrThrow(TableSection, data)
+        const section = Readable.readFromBytes(TableSection, data)
 
         sections.push(section)
 
@@ -146,7 +148,7 @@ export namespace Body {
       }
 
       if (kind === MemorySection.kind) {
-        const section = Readable.readFromBytesOrThrow(MemorySection, data)
+        const section = Readable.readFromBytes(MemorySection, data)
 
         sections.push(section)
 
@@ -154,7 +156,7 @@ export namespace Body {
       }
 
       if (kind === GlobalSection.kind) {
-        const section = Readable.readFromBytesOrThrow(GlobalSection, data)
+        const section = Readable.readFromBytes(GlobalSection, data)
 
         sections.push(section)
 
@@ -162,7 +164,7 @@ export namespace Body {
       }
 
       if (kind === ExportSection.kind) {
-        const section = Readable.readFromBytesOrThrow(ExportSection, data)
+        const section = Readable.readFromBytes(ExportSection, data)
 
         sections.push(section)
 
@@ -170,7 +172,7 @@ export namespace Body {
       }
 
       if (kind === StartSection.kind) {
-        const section = Readable.readFromBytesOrThrow(StartSection, data)
+        const section = Readable.readFromBytes(StartSection, data)
 
         sections.push(section)
 
@@ -178,7 +180,7 @@ export namespace Body {
       }
 
       if (kind === ElementSection.kind) {
-        const section = Readable.readFromBytesOrThrow(ElementSection, data)
+        const section = Readable.readFromBytes(ElementSection, data)
 
         sections.push(section)
 
@@ -186,7 +188,7 @@ export namespace Body {
       }
 
       if (kind === CodeSection.kind) {
-        const section = Readable.readFromBytesOrThrow(CodeSection, data)
+        const section = Readable.readFromBytes(CodeSection, data)
 
         sections.push(section)
 
@@ -194,7 +196,7 @@ export namespace Body {
       }
 
       if (kind === DataSection.kind) {
-        const section = Readable.readFromBytesOrThrow(DataSection, data)
+        const section = Readable.readFromBytes(DataSection, data)
 
         sections.push(section)
 
@@ -202,7 +204,7 @@ export namespace Body {
       }
 
       if (kind === DataCountSection.kind) {
-        const section = Readable.readFromBytesOrThrow(DataCountSection, data)
+        const section = Readable.readFromBytes(DataCountSection, data)
 
         sections.push(section)
 
@@ -210,7 +212,7 @@ export namespace Body {
       }
 
       if (kind === TagSection.kind) {
-        const section = Readable.readFromBytesOrThrow(TagSection, data)
+        const section = Readable.readFromBytes(TagSection, data)
 
         sections.push(section)
 
@@ -251,12 +253,12 @@ export class UnknownSection {
     public data: Uint8Array
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return this.data.length
   }
 
-  writeOrThrow(cursor: Cursor) {
-    cursor.writeOrThrow(this.data)
+  write(cursor: Cursor) {
+    cursor.write(this.data)
   }
 
 }
@@ -272,16 +274,16 @@ export class CustomSection {
     return CustomSection.kind
   }
 
-  sizeOrThrow(): number {
-    return new LEB128.U32(this.name.length).sizeOrThrow() + this.name.length + this.data.length
+  size(): number {
+    return new LEB128.U32(this.name.length).size() + this.name.length + this.data.length
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.name.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.name.length).write(cursor)
 
-    cursor.writeOrThrow(this.name)
+    cursor.write(this.name)
 
-    cursor.writeOrThrow(this.data)
+    cursor.write(this.data)
   }
 
 }
@@ -290,12 +292,12 @@ export namespace CustomSection {
 
   export const kind = 0
 
-  export function readOrThrow(cursor: Cursor): CustomSection {
-    const size = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): CustomSection {
+    const size = LEB128.U32.read(cursor)
 
-    const name = cursor.readOrThrow(size.value)
+    const name = cursor.read(size.value)
 
-    const data = cursor.readOrThrow(cursor.remaining)
+    const data = cursor.read(cursor.remaining)
 
     return new CustomSection(name, data)
   }
@@ -312,60 +314,60 @@ export class TypeSection {
     return TypeSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.descriptors.length).sizeOrThrow()
+    size += new LEB128.U32(this.descriptors.length).size()
 
     for (const descriptor of this.descriptors) {
       size += 1
 
       if (descriptor.prefix === TypeSection.FuncType.kind) {
-        size += descriptor.body.sizeOrThrow()
+        size += descriptor.body.size()
         continue
       }
 
       if (descriptor.prefix === 0x4E || descriptor.prefix === 0x4D) {
-        size += new LEB128.U32(descriptor.subtypes.length).sizeOrThrow()
+        size += new LEB128.U32(descriptor.subtypes.length).size()
 
         for (const subtype of descriptor.subtypes)
-          size += new LEB128.U32(subtype).sizeOrThrow()
+          size += new LEB128.U32(subtype).size()
 
         // NOOP
       }
 
       size += 1
 
-      size += descriptor.body.sizeOrThrow()
+      size += descriptor.body.size()
       continue
     }
 
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.descriptors.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.descriptors.length).write(cursor)
 
     for (const descriptor of this.descriptors) {
-      cursor.writeUint8OrThrow(descriptor.prefix)
+      cursor.writeUint8(descriptor.prefix)
 
       if (descriptor.prefix === TypeSection.FuncType.kind) {
-        descriptor.body.writeOrThrow(cursor)
+        descriptor.body.write(cursor)
         continue
       }
 
       if (descriptor.prefix === 0x4E || descriptor.prefix === 0x4D) {
-        new LEB128.U32(descriptor.subtypes.length).writeOrThrow(cursor)
+        new LEB128.U32(descriptor.subtypes.length).write(cursor)
 
         for (const subtype of descriptor.subtypes)
-          new LEB128.U32(subtype).writeOrThrow(cursor)
+          new LEB128.U32(subtype).write(cursor)
 
         // NOOP
       }
 
-      cursor.writeUint8OrThrow(descriptor.body.kind)
+      cursor.writeUint8(descriptor.body.kind)
 
-      descriptor.body.writeOrThrow(cursor)
+      descriptor.body.write(cursor)
       continue
     }
 
@@ -384,16 +386,16 @@ export namespace TypeSection {
     body: TypeBody
   }
 
-  export function readOrThrow(cursor: Cursor): TypeSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): TypeSection {
+    const count = LEB128.U32.read(cursor)
 
     const types = new Array<TypeDescriptor>()
 
     for (let i = 0; i < count.value; i++) {
-      const prefix = cursor.readUint8OrThrow()
+      const prefix = cursor.readUint8()
 
       if (prefix === FuncType.kind) {
-        const body = FuncType.readOrThrow(cursor)
+        const body = FuncType.read(cursor)
         types.push({ prefix, subtypes: [], body })
         continue
       }
@@ -401,30 +403,30 @@ export namespace TypeSection {
       const subtypes = new Array<number>()
 
       if (prefix === 0x4E || prefix === 0x4D) {
-        const subcount = LEB128.U32.readOrThrow(cursor)
+        const subcount = LEB128.U32.read(cursor)
 
         for (let j = 0; j < subcount.value; j++)
-          subtypes.push(LEB128.U32.readOrThrow(cursor).value)
+          subtypes.push(LEB128.U32.read(cursor).value)
 
         // NOOP
       }
 
-      const kind = cursor.readUint8OrThrow()
+      const kind = cursor.readUint8()
 
       if (kind === FuncType.kind) {
-        const body = FuncType.readOrThrow(cursor)
+        const body = FuncType.read(cursor)
         types.push({ prefix, subtypes, body })
         continue
       }
 
       if (kind === StructType.kind) {
-        const body = StructType.readOrThrow(cursor)
+        const body = StructType.read(cursor)
         types.push({ prefix, subtypes, body })
         continue
       }
 
       if (kind === ArrayType.kind) {
-        const body = ArrayType.readOrThrow(cursor)
+        const body = ArrayType.read(cursor)
         types.push({ prefix, subtypes, body })
         continue
       }
@@ -451,30 +453,30 @@ export namespace TypeSection {
       return FuncType.kind
     }
 
-    sizeOrThrow(): number {
+    size(): number {
       let size = 0
 
-      size += new LEB128.U32(this.params.length).sizeOrThrow()
+      size += new LEB128.U32(this.params.length).size()
 
       size += this.params.length
 
-      size += new LEB128.U32(this.results.length).sizeOrThrow()
+      size += new LEB128.U32(this.results.length).size()
 
       size += this.results.length
 
       return size
     }
 
-    writeOrThrow(cursor: Cursor) {
-      new LEB128.U32(this.params.length).writeOrThrow(cursor)
+    write(cursor: Cursor) {
+      new LEB128.U32(this.params.length).write(cursor)
 
       for (const param of this.params)
-        cursor.writeUint8OrThrow(param)
+        cursor.writeUint8(param)
 
-      new LEB128.U32(this.results.length).writeOrThrow(cursor)
+      new LEB128.U32(this.results.length).write(cursor)
 
       for (const result of this.results)
-        cursor.writeUint8OrThrow(result)
+        cursor.writeUint8(result)
 
       return
     }
@@ -485,20 +487,20 @@ export namespace TypeSection {
 
     export const kind = 0x60
 
-    export function readOrThrow(cursor: Cursor): FuncType {
-      const pcount = LEB128.U32.readOrThrow(cursor)
+    export function read(cursor: Cursor): FuncType {
+      const pcount = LEB128.U32.read(cursor)
 
       const params = new Array<number>()
 
       for (let i = 0; i < pcount.value; i++)
-        params.push(cursor.readUint8OrThrow())
+        params.push(cursor.readUint8())
 
-      const rcount = LEB128.U32.readOrThrow(cursor)
+      const rcount = LEB128.U32.read(cursor)
 
       const results = new Array<number>()
 
       for (let i = 0; i < rcount.value; i++)
-        results.push(cursor.readUint8OrThrow())
+        results.push(cursor.readUint8())
 
       return new FuncType(params, results)
     }
@@ -515,10 +517,10 @@ export namespace TypeSection {
       return StructType.kind
     }
 
-    sizeOrThrow(): number {
+    size(): number {
       let size = 0
 
-      size += new LEB128.U32(this.fields.length).sizeOrThrow()
+      size += new LEB128.U32(this.fields.length).size()
 
       for (const _ of this.fields)
         size += 1 + 1
@@ -526,12 +528,12 @@ export namespace TypeSection {
       return size
     }
 
-    writeOrThrow(cursor: Cursor) {
-      new LEB128.U32(this.fields.length).writeOrThrow(cursor)
+    write(cursor: Cursor) {
+      new LEB128.U32(this.fields.length).write(cursor)
 
       for (const [valtype, mutable] of this.fields) {
-        cursor.writeUint8OrThrow(valtype)
-        cursor.writeUint8OrThrow(mutable ? 1 : 0)
+        cursor.writeUint8(valtype)
+        cursor.writeUint8(mutable ? 1 : 0)
       }
 
       return
@@ -543,14 +545,14 @@ export namespace TypeSection {
 
     export const kind = 0x5E
 
-    export function readOrThrow(cursor: Cursor): StructType {
-      const count = LEB128.U32.readOrThrow(cursor)
+    export function read(cursor: Cursor): StructType {
+      const count = LEB128.U32.read(cursor)
 
       const fields = new Array<[number, boolean]>()
 
       for (let i = 0; i < count.value; i++) {
-        const valtype = cursor.readUint8OrThrow()
-        const mutable = cursor.readUint8OrThrow() === 1
+        const valtype = cursor.readUint8()
+        const mutable = cursor.readUint8() === 1
 
         fields.push([valtype, mutable])
       }
@@ -571,13 +573,13 @@ export namespace TypeSection {
       return ArrayType.kind
     }
 
-    sizeOrThrow(): number {
+    size(): number {
       return 1 + 1
     }
 
-    writeOrThrow(cursor: Cursor) {
-      cursor.writeUint8OrThrow(this.valtype)
-      cursor.writeUint8OrThrow(this.mutable ? 1 : 0)
+    write(cursor: Cursor) {
+      cursor.writeUint8(this.valtype)
+      cursor.writeUint8(this.mutable ? 1 : 0)
     }
 
   }
@@ -586,9 +588,9 @@ export namespace TypeSection {
 
     export const kind = 0x5F
 
-    export function readOrThrow(cursor: Cursor): ArrayType {
-      const valtype = cursor.readUint8OrThrow()
-      const mutable = cursor.readUint8OrThrow() === 1
+    export function read(cursor: Cursor): ArrayType {
+      const valtype = cursor.readUint8()
+      const mutable = cursor.readUint8() === 1
 
       return new ArrayType(valtype, mutable)
     }
@@ -607,37 +609,37 @@ export class ImportSection {
     return ImportSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.descriptors.length).sizeOrThrow()
+    size += new LEB128.U32(this.descriptors.length).size()
 
     for (const descriptor of this.descriptors) {
-      size += new LEB128.U32(descriptor.from.length).sizeOrThrow() + descriptor.from.length
+      size += new LEB128.U32(descriptor.from.length).size() + descriptor.from.length
 
-      size += new LEB128.U32(descriptor.name.length).sizeOrThrow() + descriptor.name.length
+      size += new LEB128.U32(descriptor.name.length).size() + descriptor.name.length
 
       size += 1
 
-      size += descriptor.body.sizeOrThrow()
+      size += descriptor.body.size()
     }
 
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.descriptors.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.descriptors.length).write(cursor)
 
     for (const descriptor of this.descriptors) {
-      new LEB128.U32(descriptor.from.length).writeOrThrow(cursor)
-      cursor.writeOrThrow(descriptor.from)
+      new LEB128.U32(descriptor.from.length).write(cursor)
+      cursor.write(descriptor.from)
 
-      new LEB128.U32(descriptor.name.length).writeOrThrow(cursor)
-      cursor.writeOrThrow(descriptor.name)
+      new LEB128.U32(descriptor.name.length).write(cursor)
+      cursor.write(descriptor.name)
 
-      cursor.writeUint8OrThrow(descriptor.body.kind)
+      cursor.writeUint8(descriptor.body.kind)
 
-      descriptor.body.writeOrThrow(cursor)
+      descriptor.body.write(cursor)
     }
   }
 }
@@ -652,37 +654,37 @@ export namespace ImportSection {
     body: ImportBody
   }
 
-  export function readOrThrow(cursor: Cursor): ImportSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): ImportSection {
+    const count = LEB128.U32.read(cursor)
 
     const descriptors = new Array<ImportDescriptor>()
 
     for (let i = 0; i < count.value; i++) {
-      const from = cursor.readOrThrow(LEB128.U32.readOrThrow(cursor).value)
-      const name = cursor.readOrThrow(LEB128.U32.readOrThrow(cursor).value)
+      const from = cursor.read(LEB128.U32.read(cursor).value)
+      const name = cursor.read(LEB128.U32.read(cursor).value)
 
-      const kind = cursor.readUint8OrThrow()
+      const kind = cursor.readUint8()
 
       if (kind === 0x00) {
-        const body = FunctionImport.readOrThrow(cursor)
+        const body = FunctionImport.read(cursor)
         descriptors.push({ from, name, body })
         continue
       }
 
       if (kind === 0x01) {
-        const body = TableImport.readOrThrow(cursor)
+        const body = TableImport.read(cursor)
         descriptors.push({ from, name, body })
         continue
       }
 
       if (kind === 0x02) {
-        const body = MemoryImport.readOrThrow(cursor)
+        const body = MemoryImport.read(cursor)
         descriptors.push({ from, name, body })
         continue
       }
 
       if (kind === 0x03) {
-        const body = GlobalImport.readOrThrow(cursor)
+        const body = GlobalImport.read(cursor)
         descriptors.push({ from, name, body })
         continue
       }
@@ -709,12 +711,12 @@ export namespace ImportSection {
       return FunctionImport.kind
     }
 
-    sizeOrThrow(): number {
-      return new LEB128.U32(this.typeidx).sizeOrThrow()
+    size(): number {
+      return new LEB128.U32(this.typeidx).size()
     }
 
-    writeOrThrow(cursor: Cursor) {
-      new LEB128.U32(this.typeidx).writeOrThrow(cursor)
+    write(cursor: Cursor) {
+      new LEB128.U32(this.typeidx).write(cursor)
     }
 
   }
@@ -723,8 +725,8 @@ export namespace ImportSection {
 
     export const kind = 0x00
 
-    export function readOrThrow(cursor: Cursor): FunctionImport {
-      return new FunctionImport(LEB128.U32.readOrThrow(cursor).value)
+    export function read(cursor: Cursor): FunctionImport {
+      return new FunctionImport(LEB128.U32.read(cursor).value)
     }
 
   }
@@ -742,30 +744,30 @@ export namespace ImportSection {
       return TableImport.kind
     }
 
-    sizeOrThrow(): number {
+    size(): number {
       let size = 0
 
       size += 1
 
       size += 1
 
-      size += new LEB128.U32(this.min).sizeOrThrow()
+      size += new LEB128.U32(this.min).size()
 
       if (this.max != null)
-        size += new LEB128.U32(this.max).sizeOrThrow()
+        size += new LEB128.U32(this.max).size()
 
       return size
     }
 
-    writeOrThrow(cursor: Cursor) {
-      cursor.writeUint8OrThrow(this.reftype)
+    write(cursor: Cursor) {
+      cursor.writeUint8(this.reftype)
 
-      cursor.writeUint8OrThrow(this.flag)
+      cursor.writeUint8(this.flag)
 
-      new LEB128.U32(this.min).writeOrThrow(cursor)
+      new LEB128.U32(this.min).write(cursor)
 
       if (this.max != null)
-        new LEB128.U32(this.max).writeOrThrow(cursor)
+        new LEB128.U32(this.max).write(cursor)
 
       return
     }
@@ -776,13 +778,13 @@ export namespace ImportSection {
 
     export const kind = 0x01
 
-    export function readOrThrow(cursor: Cursor): TableImport {
-      const reftype = cursor.readUint8OrThrow()
+    export function read(cursor: Cursor): TableImport {
+      const reftype = cursor.readUint8()
 
-      const flag = cursor.readUint8OrThrow()
+      const flag = cursor.readUint8()
 
-      const min = LEB128.U32.readOrThrow(cursor).value
-      const max = flag & 0x01 ? LEB128.U32.readOrThrow(cursor).value : null
+      const min = LEB128.U32.read(cursor).value
+      const max = flag & 0x01 ? LEB128.U32.read(cursor).value : null
 
       return new TableImport(reftype, flag, min, max)
     }
@@ -801,24 +803,24 @@ export namespace ImportSection {
       return MemoryImport.kind
     }
 
-    sizeOrThrow(): number {
+    size(): number {
       let size = 1
 
-      size += new LEB128.U32(this.min).sizeOrThrow()
+      size += new LEB128.U32(this.min).size()
 
       if (this.max != null)
-        size += new LEB128.U32(this.max).sizeOrThrow()
+        size += new LEB128.U32(this.max).size()
 
       return size
     }
 
-    writeOrThrow(cursor: Cursor) {
-      cursor.writeUint8OrThrow(this.flag)
+    write(cursor: Cursor) {
+      cursor.writeUint8(this.flag)
 
-      new LEB128.U32(this.min).writeOrThrow(cursor)
+      new LEB128.U32(this.min).write(cursor)
 
       if (this.max != null)
-        new LEB128.U32(this.max).writeOrThrow(cursor)
+        new LEB128.U32(this.max).write(cursor)
 
       return
     }
@@ -829,11 +831,11 @@ export namespace ImportSection {
 
     export const kind = 0x02
 
-    export function readOrThrow(cursor: Cursor): MemoryImport {
-      const flag = cursor.readUint8OrThrow()
+    export function read(cursor: Cursor): MemoryImport {
+      const flag = cursor.readUint8()
 
-      const min = LEB128.U32.readOrThrow(cursor)
-      const max = flag & 0x01 ? LEB128.U32.readOrThrow(cursor).value : null
+      const min = LEB128.U32.read(cursor)
+      const max = flag & 0x01 ? LEB128.U32.read(cursor).value : null
 
       return new MemoryImport(flag, min.value, max)
     }
@@ -851,13 +853,13 @@ export namespace ImportSection {
       return GlobalImport.kind
     }
 
-    sizeOrThrow(): number {
+    size(): number {
       return 1 + 1
     }
 
-    writeOrThrow(cursor: Cursor) {
-      cursor.writeUint8OrThrow(this.valtype)
-      cursor.writeUint8OrThrow(this.mutable)
+    write(cursor: Cursor) {
+      cursor.writeUint8(this.valtype)
+      cursor.writeUint8(this.mutable)
     }
 
   }
@@ -866,9 +868,9 @@ export namespace ImportSection {
 
     export const kind = 0x03
 
-    export function readOrThrow(cursor: Cursor): GlobalImport {
-      const valtype = cursor.readUint8OrThrow()
-      const mutable = cursor.readUint8OrThrow()
+    export function read(cursor: Cursor): GlobalImport {
+      const valtype = cursor.readUint8()
+      const mutable = cursor.readUint8()
 
       return new GlobalImport(valtype, mutable)
     }
@@ -887,22 +889,22 @@ export class FunctionSection {
     return FunctionSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.typeidxs.length).sizeOrThrow()
+    size += new LEB128.U32(this.typeidxs.length).size()
 
     for (const typeidx of this.typeidxs)
-      size += new LEB128.U32(typeidx).sizeOrThrow()
+      size += new LEB128.U32(typeidx).size()
 
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.typeidxs.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.typeidxs.length).write(cursor)
 
     for (const typeidx of this.typeidxs)
-      new LEB128.U32(typeidx).writeOrThrow(cursor)
+      new LEB128.U32(typeidx).write(cursor)
 
     return
   }
@@ -913,13 +915,13 @@ export namespace FunctionSection {
 
   export const kind = 0x03
 
-  export function readOrThrow(cursor: Cursor): FunctionSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): FunctionSection {
+    const count = LEB128.U32.read(cursor)
 
     const typeidxs = new Array<number>()
 
     for (let i = 0; i < count.value; i++)
-      typeidxs.push(LEB128.U32.readOrThrow(cursor).value)
+      typeidxs.push(LEB128.U32.read(cursor).value)
 
     return new FunctionSection(typeidxs)
   }
@@ -936,20 +938,20 @@ export class TableSection {
     return TableSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.descriptors.length).sizeOrThrow()
+    size += new LEB128.U32(this.descriptors.length).size()
 
     for (const descriptor of this.descriptors) {
       size += 1
 
       size += 1
 
-      size += new LEB128.U32(descriptor.min).sizeOrThrow()
+      size += new LEB128.U32(descriptor.min).size()
 
       if (descriptor.max != null)
-        size += new LEB128.U32(descriptor.max).sizeOrThrow()
+        size += new LEB128.U32(descriptor.max).size()
 
       continue
     }
@@ -957,18 +959,18 @@ export class TableSection {
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.descriptors.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.descriptors.length).write(cursor)
 
     for (const descriptor of this.descriptors) {
-      cursor.writeUint8OrThrow(descriptor.reftype)
+      cursor.writeUint8(descriptor.reftype)
 
-      cursor.writeUint8OrThrow(descriptor.flag)
+      cursor.writeUint8(descriptor.flag)
 
-      new LEB128.U32(descriptor.min).writeOrThrow(cursor)
+      new LEB128.U32(descriptor.min).write(cursor)
 
       if (descriptor.max != null)
-        new LEB128.U32(descriptor.max).writeOrThrow(cursor)
+        new LEB128.U32(descriptor.max).write(cursor)
 
       continue
     }
@@ -989,18 +991,18 @@ export namespace TableSection {
     max: Nullable<number>
   }
 
-  export function readOrThrow(cursor: Cursor): TableSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): TableSection {
+    const count = LEB128.U32.read(cursor)
 
     const descriptors = new Array<TableDescriptor>()
 
     for (let i = 0; i < count.value; i++) {
-      const reftype = cursor.readUint8OrThrow()
+      const reftype = cursor.readUint8()
 
-      const flag = cursor.readUint8OrThrow()
+      const flag = cursor.readUint8()
 
-      const min = LEB128.U32.readOrThrow(cursor).value
-      const max = flag & 0x01 ? LEB128.U32.readOrThrow(cursor).value : null
+      const min = LEB128.U32.read(cursor).value
+      const max = flag & 0x01 ? LEB128.U32.read(cursor).value : null
 
       descriptors.push({ reftype, flag, min, max })
     }
@@ -1020,18 +1022,18 @@ export class MemorySection {
     return MemorySection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.descriptors.length).sizeOrThrow()
+    size += new LEB128.U32(this.descriptors.length).size()
 
     for (const descriptor of this.descriptors) {
       size += 1
 
-      size += new LEB128.U32(descriptor.min).sizeOrThrow()
+      size += new LEB128.U32(descriptor.min).size()
 
       if (descriptor.max != null)
-        size += new LEB128.U32(descriptor.max).sizeOrThrow()
+        size += new LEB128.U32(descriptor.max).size()
 
       continue
     }
@@ -1039,16 +1041,16 @@ export class MemorySection {
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.descriptors.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.descriptors.length).write(cursor)
 
     for (const descriptor of this.descriptors) {
-      cursor.writeUint8OrThrow(descriptor.flag)
+      cursor.writeUint8(descriptor.flag)
 
-      new LEB128.U32(descriptor.min).writeOrThrow(cursor)
+      new LEB128.U32(descriptor.min).write(cursor)
 
       if (descriptor.max != null)
-        new LEB128.U32(descriptor.max).writeOrThrow(cursor)
+        new LEB128.U32(descriptor.max).write(cursor)
 
       continue
     }
@@ -1068,16 +1070,16 @@ export namespace MemorySection {
     max: Nullable<number>
   }
 
-  export function readOrThrow(cursor: Cursor): MemorySection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): MemorySection {
+    const count = LEB128.U32.read(cursor)
 
     const descriptors = new Array<MemoryDescriptor>()
 
     for (let i = 0; i < count.value; i++) {
-      const flag = cursor.readUint8OrThrow()
+      const flag = cursor.readUint8()
 
-      const min = LEB128.U32.readOrThrow(cursor).value
-      const max = flag & 0x01 ? LEB128.U32.readOrThrow(cursor).value : null
+      const min = LEB128.U32.read(cursor).value
+      const max = flag & 0x01 ? LEB128.U32.read(cursor).value : null
 
       descriptors.push({ flag, min, max })
     }
@@ -1097,17 +1099,17 @@ export class GlobalSection {
     return GlobalSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.descriptors.length).sizeOrThrow()
+    size += new LEB128.U32(this.descriptors.length).size()
 
     for (const descriptor of this.descriptors) {
       size += 1
       size += 1
 
       for (const instruction of descriptor.instructions)
-        size += instruction.sizeOrThrow()
+        size += instruction.size()
 
       continue
     }
@@ -1115,15 +1117,15 @@ export class GlobalSection {
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.descriptors.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.descriptors.length).write(cursor)
 
     for (const descriptor of this.descriptors) {
-      cursor.writeUint8OrThrow(descriptor.valtype)
-      cursor.writeUint8OrThrow(descriptor.mutable)
+      cursor.writeUint8(descriptor.valtype)
+      cursor.writeUint8(descriptor.mutable)
 
       for (const instruction of descriptor.instructions)
-        instruction.writeOrThrow(cursor)
+        instruction.write(cursor)
 
       continue
     }
@@ -1147,19 +1149,19 @@ export namespace GlobalSection {
 
   }
 
-  export function readOrThrow(cursor: Cursor): GlobalSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): GlobalSection {
+    const count = LEB128.U32.read(cursor)
 
     const descriptors = new Array<GlobalDescriptor>()
 
     for (let i = 0; i < count.value; i++) {
-      const valtype = cursor.readUint8OrThrow()
-      const mutable = cursor.readUint8OrThrow()
+      const valtype = cursor.readUint8()
+      const mutable = cursor.readUint8()
 
       const instructions = new Array<Instruction>()
 
       while (true) {
-        const instruction = Instruction.readOrThrow(cursor)
+        const instruction = Instruction.read(cursor)
 
         instructions.push(instruction)
 
@@ -1187,35 +1189,35 @@ export class ExportSection {
     return ExportSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.descriptors.length).sizeOrThrow()
+    size += new LEB128.U32(this.descriptors.length).size()
 
     for (const descriptor of this.descriptors) {
-      size += new LEB128.U32(descriptor.name.length).sizeOrThrow()
+      size += new LEB128.U32(descriptor.name.length).size()
 
       size += descriptor.name.length
 
       size += 1
 
-      size += new LEB128.U32(descriptor.xidx).sizeOrThrow()
+      size += new LEB128.U32(descriptor.xidx).size()
     }
 
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.descriptors.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.descriptors.length).write(cursor)
 
     for (const descriptor of this.descriptors) {
-      new LEB128.U32(descriptor.name.length).writeOrThrow(cursor)
+      new LEB128.U32(descriptor.name.length).write(cursor)
 
-      cursor.writeOrThrow(descriptor.name)
+      cursor.write(descriptor.name)
 
-      cursor.writeUint8OrThrow(descriptor.kind)
+      cursor.writeUint8(descriptor.kind)
 
-      new LEB128.U32(descriptor.xidx).writeOrThrow(cursor)
+      new LEB128.U32(descriptor.xidx).write(cursor)
     }
 
     return
@@ -1236,15 +1238,15 @@ export namespace ExportSection {
 
   }
 
-  export function readOrThrow(cursor: Cursor): ExportSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): ExportSection {
+    const count = LEB128.U32.read(cursor)
 
     const exports = new Array<ExportDescriptor>()
 
     for (let i = 0; i < count.value; i++) {
-      const name = cursor.readOrThrow(LEB128.U32.readOrThrow(cursor).value)
-      const kind = cursor.readUint8OrThrow()
-      const xidx = LEB128.U32.readOrThrow(cursor).value
+      const name = cursor.read(LEB128.U32.read(cursor).value)
+      const kind = cursor.readUint8()
+      const xidx = LEB128.U32.read(cursor).value
 
       exports.push({ name, kind, xidx })
     }
@@ -1264,12 +1266,12 @@ export class StartSection {
     return StartSection.kind
   }
 
-  sizeOrThrow(): number {
-    return new LEB128.U32(this.funcidx).sizeOrThrow()
+  size(): number {
+    return new LEB128.U32(this.funcidx).size()
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.funcidx).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.funcidx).write(cursor)
   }
 
 }
@@ -1278,8 +1280,8 @@ export namespace StartSection {
 
   export const kind = 0x08
 
-  export function readOrThrow(cursor: Cursor): StartSection {
-    return new StartSection(LEB128.U32.readOrThrow(cursor).value)
+  export function read(cursor: Cursor): StartSection {
+    return new StartSection(LEB128.U32.read(cursor).value)
   }
 
 }
@@ -1294,22 +1296,22 @@ export class ElementSection {
     return ElementSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.segments.length).sizeOrThrow()
+    size += new LEB128.U32(this.segments.length).size()
 
     for (const segment of this.segments) {
       size += 1
 
       if (segment.flag === 0) {
         for (const instruction of segment.instructions)
-          size += instruction.sizeOrThrow()
+          size += instruction.size()
 
-        size += new LEB128.U32(segment.funcidxs.length).sizeOrThrow()
+        size += new LEB128.U32(segment.funcidxs.length).size()
 
         for (const funcidx of segment.funcidxs)
-          size += new LEB128.U32(funcidx).sizeOrThrow()
+          size += new LEB128.U32(funcidx).size()
 
         continue
       }
@@ -1317,28 +1319,28 @@ export class ElementSection {
       if (segment.flag === 1) {
         size += 1
 
-        size += new LEB128.U32(segment.elements.length).sizeOrThrow()
+        size += new LEB128.U32(segment.elements.length).size()
 
         for (const instructions of segment.elements)
           for (const instruction of instructions)
-            size += instruction.sizeOrThrow()
+            size += instruction.size()
 
         continue
       }
 
       if (segment.flag === 2) {
-        size += new LEB128.U32(segment.tableidx).sizeOrThrow()
+        size += new LEB128.U32(segment.tableidx).size()
 
         for (const instruction of segment.instructions)
-          size += instruction.sizeOrThrow()
+          size += instruction.size()
 
         size += 1
 
-        size += new LEB128.U32(segment.elements.length).sizeOrThrow()
+        size += new LEB128.U32(segment.elements.length).size()
 
         for (const instructions of segment.elements)
           for (const instruction of instructions)
-            size += instruction.sizeOrThrow()
+            size += instruction.size()
 
         continue
       }
@@ -1346,23 +1348,23 @@ export class ElementSection {
       if (segment.flag === 3) {
         size += 1
 
-        size += new LEB128.U32(segment.elements.length).sizeOrThrow()
+        size += new LEB128.U32(segment.elements.length).size()
 
         for (const instructions of segment.elements)
           for (const instruction of instructions)
-            size += instruction.sizeOrThrow()
+            size += instruction.size()
 
         continue
       }
 
       if (segment.flag === 4) {
         for (const instruction of segment.instructions)
-          size += instruction.sizeOrThrow()
+          size += instruction.size()
 
-        size += new LEB128.U32(segment.funcidxs.length).sizeOrThrow()
+        size += new LEB128.U32(segment.funcidxs.length).size()
 
         for (const funcidx of segment.funcidxs)
-          size += new LEB128.U32(funcidx).sizeOrThrow()
+          size += new LEB128.U32(funcidx).size()
 
         continue
       }
@@ -1370,26 +1372,26 @@ export class ElementSection {
       if (segment.flag === 5) {
         size += 1
 
-        size += new LEB128.U32(segment.funcidxs.length).sizeOrThrow()
+        size += new LEB128.U32(segment.funcidxs.length).size()
 
         for (const funcidx of segment.funcidxs)
-          size += new LEB128.U32(funcidx).sizeOrThrow()
+          size += new LEB128.U32(funcidx).size()
 
         continue
       }
 
       if (segment.flag === 6) {
-        size += new LEB128.U32(segment.tableidx).sizeOrThrow()
+        size += new LEB128.U32(segment.tableidx).size()
 
         for (const instruction of segment.instructions)
-          size += instruction.sizeOrThrow()
+          size += instruction.size()
 
         size += 1
 
-        size += new LEB128.U32(segment.funcidxs.length).sizeOrThrow()
+        size += new LEB128.U32(segment.funcidxs.length).size()
 
         for (const funcidx of segment.funcidxs)
-          size += new LEB128.U32(funcidx).sizeOrThrow()
+          size += new LEB128.U32(funcidx).size()
 
         continue
       }
@@ -1397,10 +1399,10 @@ export class ElementSection {
       if (segment.flag === 7) {
         size += 1
 
-        size += new LEB128.U32(segment.funcidxs.length).sizeOrThrow()
+        size += new LEB128.U32(segment.funcidxs.length).size()
 
         for (const funcidx of segment.funcidxs)
-          size += new LEB128.U32(funcidx).sizeOrThrow()
+          size += new LEB128.U32(funcidx).size()
 
         continue
       }
@@ -1409,111 +1411,111 @@ export class ElementSection {
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.segments.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.segments.length).write(cursor)
 
     for (const segment of this.segments) {
-      cursor.writeUint8OrThrow(segment.flag)
+      cursor.writeUint8(segment.flag)
 
       if (segment.flag === 0) {
         for (const instruction of segment.instructions)
-          instruction.writeOrThrow(cursor)
+          instruction.write(cursor)
 
-        new LEB128.U32(segment.funcidxs.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.funcidxs.length).write(cursor)
 
         for (const funcidx of segment.funcidxs)
-          new LEB128.U32(funcidx).writeOrThrow(cursor)
+          new LEB128.U32(funcidx).write(cursor)
 
         continue
       }
 
       if (segment.flag === 1) {
-        cursor.writeUint8OrThrow(segment.reftype)
+        cursor.writeUint8(segment.reftype)
 
-        new LEB128.U32(segment.elements.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.elements.length).write(cursor)
 
         for (const instructions of segment.elements)
           for (const instruction of instructions)
-            instruction.writeOrThrow(cursor)
+            instruction.write(cursor)
 
         continue
       }
 
       if (segment.flag === 2) {
-        new LEB128.U32(segment.tableidx).writeOrThrow(cursor)
+        new LEB128.U32(segment.tableidx).write(cursor)
 
         for (const instruction of segment.instructions)
-          instruction.writeOrThrow(cursor)
+          instruction.write(cursor)
 
-        cursor.writeUint8OrThrow(segment.reftype)
+        cursor.writeUint8(segment.reftype)
 
-        new LEB128.U32(segment.elements.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.elements.length).write(cursor)
 
         for (const instructions of segment.elements)
           for (const instruction of instructions)
-            instruction.writeOrThrow(cursor)
+            instruction.write(cursor)
 
         continue
       }
 
       if (segment.flag === 3) {
-        cursor.writeUint8OrThrow(segment.reftype)
+        cursor.writeUint8(segment.reftype)
 
-        new LEB128.U32(segment.elements.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.elements.length).write(cursor)
 
         for (const instructions of segment.elements)
           for (const instruction of instructions)
-            instruction.writeOrThrow(cursor)
+            instruction.write(cursor)
 
         continue
       }
 
       if (segment.flag === 4) {
         for (const instruction of segment.instructions)
-          instruction.writeOrThrow(cursor)
+          instruction.write(cursor)
 
-        new LEB128.U32(segment.funcidxs.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.funcidxs.length).write(cursor)
 
         for (const funcidx of segment.funcidxs)
-          new LEB128.U32(funcidx).writeOrThrow(cursor)
+          new LEB128.U32(funcidx).write(cursor)
 
         continue
       }
 
       if (segment.flag === 5) {
-        cursor.writeUint8OrThrow(segment.reftype)
+        cursor.writeUint8(segment.reftype)
 
-        new LEB128.U32(segment.funcidxs.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.funcidxs.length).write(cursor)
 
         for (const funcidx of segment.funcidxs)
-          new LEB128.U32(funcidx).writeOrThrow(cursor)
+          new LEB128.U32(funcidx).write(cursor)
 
         continue
       }
 
       if (segment.flag === 6) {
-        new LEB128.U32(segment.tableidx).writeOrThrow(cursor)
+        new LEB128.U32(segment.tableidx).write(cursor)
 
         for (const instruction of segment.instructions)
-          instruction.writeOrThrow(cursor)
+          instruction.write(cursor)
 
-        cursor.writeUint8OrThrow(segment.reftype)
+        cursor.writeUint8(segment.reftype)
 
-        new LEB128.U32(segment.funcidxs.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.funcidxs.length).write(cursor)
 
         for (const funcidx of segment.funcidxs)
-          new LEB128.U32(funcidx).writeOrThrow(cursor)
+          new LEB128.U32(funcidx).write(cursor)
 
         continue
       }
 
       if (segment.flag === 7) {
-        cursor.writeUint8OrThrow(segment.reftype)
+        cursor.writeUint8(segment.reftype)
 
-        new LEB128.U32(segment.funcidxs.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.funcidxs.length).write(cursor)
 
         for (const funcidx of segment.funcidxs)
-          new LEB128.U32(funcidx).writeOrThrow(cursor)
+          new LEB128.U32(funcidx).write(cursor)
 
         continue
       }
@@ -1535,19 +1537,19 @@ export namespace ElementSection {
     | { flag: 6, tableidx: number, instructions: Instruction[], reftype: number, funcidxs: number[] }
     | { flag: 7, reftype: number, funcidxs: number[] }
 
-  export function readOrThrow(cursor: Cursor): ElementSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): ElementSection {
+    const count = LEB128.U32.read(cursor)
 
     const segments = new Array<ElementSegment>()
 
     for (let i = 0; i < count.value; i++) {
-      const flag = cursor.readUint8OrThrow()
+      const flag = cursor.readUint8()
 
       if (flag === 0) {
         const instructions = new Array<Instruction>()
 
         while (true) {
-          const instruction = Instruction.readOrThrow(cursor)
+          const instruction = Instruction.read(cursor)
 
           instructions.push(instruction)
 
@@ -1557,21 +1559,21 @@ export namespace ElementSection {
           continue
         }
 
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const funcidxs = new Array<number>()
 
         for (let j = 0; j < count.value; j++)
-          funcidxs.push(LEB128.U32.readOrThrow(cursor).value)
+          funcidxs.push(LEB128.U32.read(cursor).value)
 
         segments.push({ flag, instructions, funcidxs })
         continue
       }
 
       if (flag === 1) {
-        const reftype = cursor.readUint8OrThrow()
+        const reftype = cursor.readUint8()
 
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const elements = new Array<Array<Instruction>>()
 
@@ -1579,7 +1581,7 @@ export namespace ElementSection {
           const instructions = new Array<Instruction>()
 
           while (true) {
-            const instruction = Instruction.readOrThrow(cursor)
+            const instruction = Instruction.read(cursor)
 
             instructions.push(instruction)
 
@@ -1597,12 +1599,12 @@ export namespace ElementSection {
       }
 
       if (flag === 2) {
-        const tableidx = LEB128.U32.readOrThrow(cursor).value
+        const tableidx = LEB128.U32.read(cursor).value
 
         const instructions = new Array<Instruction>()
 
         while (true) {
-          const instruction = Instruction.readOrThrow(cursor)
+          const instruction = Instruction.read(cursor)
 
           instructions.push(instruction)
 
@@ -1612,9 +1614,9 @@ export namespace ElementSection {
           continue
         }
 
-        const reftype = cursor.readUint8OrThrow()
+        const reftype = cursor.readUint8()
 
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const elements = new Array<Array<Instruction>>()
 
@@ -1622,7 +1624,7 @@ export namespace ElementSection {
           const instructions = new Array<Instruction>()
 
           while (true) {
-            const instruction = Instruction.readOrThrow(cursor)
+            const instruction = Instruction.read(cursor)
 
             instructions.push(instruction)
 
@@ -1640,9 +1642,9 @@ export namespace ElementSection {
       }
 
       if (flag === 3) {
-        const reftype = cursor.readUint8OrThrow()
+        const reftype = cursor.readUint8()
 
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const elements = new Array<Array<Instruction>>()
 
@@ -1650,7 +1652,7 @@ export namespace ElementSection {
           const instructions = new Array<Instruction>()
 
           while (true) {
-            const instruction = Instruction.readOrThrow(cursor)
+            const instruction = Instruction.read(cursor)
 
             instructions.push(instruction)
 
@@ -1671,7 +1673,7 @@ export namespace ElementSection {
         const instructions = new Array<Instruction>()
 
         while (true) {
-          const instruction = Instruction.readOrThrow(cursor)
+          const instruction = Instruction.read(cursor)
 
           instructions.push(instruction)
 
@@ -1681,38 +1683,38 @@ export namespace ElementSection {
           continue
         }
 
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const funcidxs = new Array<number>()
 
         for (let j = 0; j < count.value; j++)
-          funcidxs.push(LEB128.U32.readOrThrow(cursor).value)
+          funcidxs.push(LEB128.U32.read(cursor).value)
 
         segments.push({ flag, instructions, funcidxs })
         continue
       }
 
       if (flag === 5) {
-        const reftype = cursor.readUint8OrThrow()
+        const reftype = cursor.readUint8()
 
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const funcidxs = new Array<number>()
 
         for (let j = 0; j < count.value; j++)
-          funcidxs.push(LEB128.U32.readOrThrow(cursor).value)
+          funcidxs.push(LEB128.U32.read(cursor).value)
 
         segments.push({ flag, reftype, funcidxs })
         continue
       }
 
       if (flag === 6) {
-        const tableidx = LEB128.U32.readOrThrow(cursor).value
+        const tableidx = LEB128.U32.read(cursor).value
 
         const instructions = new Array<Instruction>()
 
         while (true) {
-          const instruction = Instruction.readOrThrow(cursor)
+          const instruction = Instruction.read(cursor)
 
           instructions.push(instruction)
 
@@ -1722,28 +1724,28 @@ export namespace ElementSection {
           continue
         }
 
-        const reftype = cursor.readUint8OrThrow()
+        const reftype = cursor.readUint8()
 
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const funcidxs = new Array<number>()
 
         for (let j = 0; j < count.value; j++)
-          funcidxs.push(LEB128.U32.readOrThrow(cursor).value)
+          funcidxs.push(LEB128.U32.read(cursor).value)
 
         segments.push({ flag, tableidx, instructions, reftype, funcidxs })
         continue
       }
 
       if (flag === 7) {
-        const reftype = cursor.readUint8OrThrow()
+        const reftype = cursor.readUint8()
 
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const funcidxs = new Array<number>()
 
         for (let j = 0; j < count.value; j++)
-          funcidxs.push(LEB128.U32.readOrThrow(cursor).value)
+          funcidxs.push(LEB128.U32.read(cursor).value)
 
         segments.push({ flag, reftype, funcidxs })
         continue
@@ -1767,22 +1769,22 @@ export class CodeSection {
     return CodeSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.bodies.length).sizeOrThrow()
+    size += new LEB128.U32(this.bodies.length).size()
 
     for (const func of this.bodies)
-      size += func.sizeOrThrow()
+      size += func.size()
 
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.bodies.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.bodies.length).write(cursor)
 
     for (const func of this.bodies)
-      func.writeOrThrow(cursor)
+      func.write(cursor)
 
     return
   }
@@ -1793,13 +1795,13 @@ export namespace CodeSection {
 
   export const kind = 0x0A
 
-  export function readOrThrow(cursor: Cursor): CodeSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): CodeSection {
+    const count = LEB128.U32.read(cursor)
 
     const bodies = new Array<FunctionBody>()
 
     for (let i = 0; i < count.value; i++)
-      bodies.push(FunctionBody.readOrThrow(cursor))
+      bodies.push(FunctionBody.read(cursor))
 
     return new CodeSection(bodies)
   }
@@ -1811,40 +1813,40 @@ export namespace CodeSection {
       public instructions: Instruction[]
     ) { }
 
-    sizeOrThrow(): number {
+    size(): number {
       let subsize = 0
 
-      subsize += new LEB128.U32(this.locals.length).sizeOrThrow()
+      subsize += new LEB128.U32(this.locals.length).size()
 
       for (const local of this.locals)
-        subsize += local.sizeOrThrow()
+        subsize += local.size()
 
       for (const instruction of this.instructions)
-        subsize += instruction.sizeOrThrow()
+        subsize += instruction.size()
 
-      return new LEB128.U32(subsize).sizeOrThrow() + subsize
+      return new LEB128.U32(subsize).size() + subsize
     }
 
-    writeOrThrow(cursor: Cursor) {
+    write(cursor: Cursor) {
       let subsize = 0
 
-      subsize += new LEB128.U32(this.locals.length).sizeOrThrow()
+      subsize += new LEB128.U32(this.locals.length).size()
 
       for (const local of this.locals)
-        subsize += local.sizeOrThrow()
+        subsize += local.size()
 
       for (const instruction of this.instructions)
-        subsize += instruction.sizeOrThrow()
+        subsize += instruction.size()
 
-      new LEB128.U32(subsize).writeOrThrow(cursor)
+      new LEB128.U32(subsize).write(cursor)
 
-      new LEB128.U32(this.locals.length).writeOrThrow(cursor)
+      new LEB128.U32(this.locals.length).write(cursor)
 
       for (const local of this.locals)
-        local.writeOrThrow(cursor)
+        local.write(cursor)
 
       for (const instruction of this.instructions)
-        instruction.writeOrThrow(cursor)
+        instruction.write(cursor)
 
       return
     }
@@ -1853,31 +1855,31 @@ export namespace CodeSection {
 
   export namespace FunctionBody {
 
-    export function readOrThrow(cursor: Cursor): FunctionBody {
-      const size = LEB128.U32.readOrThrow(cursor)
-      const data = cursor.readOrThrow(size.value)
+    export function read(cursor: Cursor): FunctionBody {
+      const size = LEB128.U32.read(cursor)
+      const data = cursor.read(size.value)
 
       const subcursor = new Cursor(data)
 
-      const locals = Locals.readOrThrow(subcursor)
+      const locals = Locals.read(subcursor)
 
       const instructions = new Array<Instruction>()
 
       while (subcursor.remaining > 0)
-        instructions.push(Instruction.readOrThrow(subcursor))
+        instructions.push(Instruction.read(subcursor))
 
       return new FunctionBody(locals, instructions)
     }
 
     export namespace Locals {
 
-      export function readOrThrow(cursor: Cursor): Local[] {
-        const count = LEB128.U32.readOrThrow(cursor)
+      export function read(cursor: Cursor): Local[] {
+        const count = LEB128.U32.read(cursor)
 
         const locals = new Array<Local>()
 
         for (let i = 0; i < count.value; i++)
-          locals.push(Local.readOrThrow(cursor))
+          locals.push(Local.read(cursor))
 
         return locals
       }
@@ -1891,14 +1893,14 @@ export namespace CodeSection {
         public valtype: number
       ) { }
 
-      sizeOrThrow(): number {
-        return new LEB128.U32(this.count).sizeOrThrow() + 1
+      size(): number {
+        return new LEB128.U32(this.count).size() + 1
       }
 
-      writeOrThrow(cursor: Cursor) {
-        new LEB128.U32(this.count).writeOrThrow(cursor)
+      write(cursor: Cursor) {
+        new LEB128.U32(this.count).write(cursor)
 
-        cursor.writeUint8OrThrow(this.valtype)
+        cursor.writeUint8(this.valtype)
 
         return
       }
@@ -1907,9 +1909,9 @@ export namespace CodeSection {
 
     export namespace Local {
 
-      export function readOrThrow(cursor: Cursor): Local {
-        const count = LEB128.U32.readOrThrow(cursor)
-        const valtype = cursor.readUint8OrThrow()
+      export function read(cursor: Cursor): Local {
+        const count = LEB128.U32.read(cursor)
+        const valtype = cursor.readUint8()
 
         return new Local(count.value, valtype)
       }
@@ -1930,19 +1932,19 @@ export class DataSection {
     return DataSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.segments.length).sizeOrThrow()
+    size += new LEB128.U32(this.segments.length).size()
 
     for (const segment of this.segments) {
       size += 1
 
       if (segment.flag === 0) {
         for (const instruction of segment.instructions)
-          size += instruction.sizeOrThrow()
+          size += instruction.size()
 
-        size += new LEB128.U32(segment.data.length).sizeOrThrow()
+        size += new LEB128.U32(segment.data.length).size()
 
         size += segment.data.length
 
@@ -1950,7 +1952,7 @@ export class DataSection {
       }
 
       if (segment.flag === 1) {
-        size += new LEB128.U32(segment.data.length).sizeOrThrow()
+        size += new LEB128.U32(segment.data.length).size()
 
         size += segment.data.length
 
@@ -1958,12 +1960,12 @@ export class DataSection {
       }
 
       if (segment.flag === 2) {
-        size += new LEB128.U32(segment.memidx).sizeOrThrow()
+        size += new LEB128.U32(segment.memidx).size()
 
         for (const instruction of segment.instructions)
-          size += instruction.sizeOrThrow()
+          size += instruction.size()
 
-        size += new LEB128.U32(segment.data.length).sizeOrThrow()
+        size += new LEB128.U32(segment.data.length).size()
 
         size += segment.data.length
 
@@ -1974,40 +1976,40 @@ export class DataSection {
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.segments.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.segments.length).write(cursor)
 
     for (const segment of this.segments) {
-      cursor.writeUint8OrThrow(segment.flag)
+      cursor.writeUint8(segment.flag)
 
       if (segment.flag === 0) {
         for (const instruction of segment.instructions)
-          instruction.writeOrThrow(cursor)
+          instruction.write(cursor)
 
-        new LEB128.U32(segment.data.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.data.length).write(cursor)
 
-        cursor.writeOrThrow(segment.data)
+        cursor.write(segment.data)
 
         continue
       }
 
       if (segment.flag === 1) {
-        new LEB128.U32(segment.data.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.data.length).write(cursor)
 
-        cursor.writeOrThrow(segment.data)
+        cursor.write(segment.data)
 
         continue
       }
 
       if (segment.flag === 2) {
-        new LEB128.U32(segment.memidx).writeOrThrow(cursor)
+        new LEB128.U32(segment.memidx).write(cursor)
 
         for (const instruction of segment.instructions)
-          instruction.writeOrThrow(cursor)
+          instruction.write(cursor)
 
-        new LEB128.U32(segment.data.length).writeOrThrow(cursor)
+        new LEB128.U32(segment.data.length).write(cursor)
 
-        cursor.writeOrThrow(segment.data)
+        cursor.write(segment.data)
 
         continue
       }
@@ -2027,19 +2029,19 @@ export namespace DataSection {
     | { flag: 1, data: Uint8Array }
     | { flag: 2, memidx: number, instructions: Instruction[], data: Uint8Array }
 
-  export function readOrThrow(cursor: Cursor): DataSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): DataSection {
+    const count = LEB128.U32.read(cursor)
 
     const segments = new Array<DataSegment>()
 
     for (let i = 0; i < count.value; i++) {
-      const flag = cursor.readUint8OrThrow()
+      const flag = cursor.readUint8()
 
       if (flag === 0) {
         const instructions = new Array<Instruction>()
 
         while (true) {
-          const instruction = Instruction.readOrThrow(cursor)
+          const instruction = Instruction.read(cursor)
 
           instructions.push(instruction)
 
@@ -2049,26 +2051,26 @@ export namespace DataSection {
           continue
         }
 
-        const data = cursor.readOrThrow(LEB128.U32.readOrThrow(cursor).value)
+        const data = cursor.read(LEB128.U32.read(cursor).value)
 
         segments.push({ flag, instructions, data })
         continue
       }
 
       if (flag === 1) {
-        const data = cursor.readOrThrow(LEB128.U32.readOrThrow(cursor).value)
+        const data = cursor.read(LEB128.U32.read(cursor).value)
 
         segments.push({ flag, data })
         continue
       }
 
       if (flag === 2) {
-        const memidx = LEB128.U32.readOrThrow(cursor).value
+        const memidx = LEB128.U32.read(cursor).value
 
         const instructions = new Array<Instruction>()
 
         while (true) {
-          const instruction = Instruction.readOrThrow(cursor)
+          const instruction = Instruction.read(cursor)
 
           instructions.push(instruction)
 
@@ -2078,7 +2080,7 @@ export namespace DataSection {
           continue
         }
 
-        const data = cursor.readOrThrow(LEB128.U32.readOrThrow(cursor).value)
+        const data = cursor.read(LEB128.U32.read(cursor).value)
 
         segments.push({ flag, memidx, instructions, data })
         continue
@@ -2101,12 +2103,12 @@ export class DataCountSection {
     return DataCountSection.kind
   }
 
-  sizeOrThrow(): number {
-    return new LEB128.U32(this.count).sizeOrThrow()
+  size(): number {
+    return new LEB128.U32(this.count).size()
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.count).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.count).write(cursor)
   }
 
 }
@@ -2115,8 +2117,8 @@ export namespace DataCountSection {
 
   export const kind = 0x0c
 
-  export function readOrThrow(cursor: Cursor): DataCountSection {
-    return new DataCountSection(LEB128.U32.readOrThrow(cursor).value)
+  export function read(cursor: Cursor): DataCountSection {
+    return new DataCountSection(LEB128.U32.read(cursor).value)
   }
 
 }
@@ -2131,15 +2133,15 @@ export class TagSection {
     return TagSection.kind
   }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 0
 
-    size += new LEB128.U32(this.tags.length).sizeOrThrow()
+    size += new LEB128.U32(this.tags.length).size()
 
     for (const [_, typeidx] of this.tags) {
       size += 1
 
-      size += new LEB128.U32(typeidx).sizeOrThrow()
+      size += new LEB128.U32(typeidx).size()
 
       continue
     }
@@ -2147,13 +2149,13 @@ export class TagSection {
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    new LEB128.U32(this.tags.length).writeOrThrow(cursor)
+  write(cursor: Cursor) {
+    new LEB128.U32(this.tags.length).write(cursor)
 
     for (const [attribute, typeidx] of this.tags) {
-      cursor.writeUint8OrThrow(attribute)
+      cursor.writeUint8(attribute)
 
-      new LEB128.U32(typeidx).writeOrThrow(cursor)
+      new LEB128.U32(typeidx).write(cursor)
 
       continue
     }
@@ -2167,14 +2169,14 @@ export namespace TagSection {
 
   export const kind = 0x0d
 
-  export function readOrThrow(cursor: Cursor): TagSection {
-    const count = LEB128.U32.readOrThrow(cursor)
+  export function read(cursor: Cursor): TagSection {
+    const count = LEB128.U32.read(cursor)
 
     const tags = new Array<[number, number]>()
 
     for (let i = 0; i < count.value; i++) {
-      const attribute = cursor.readUint8OrThrow()
-      const typeidx = LEB128.U32.readOrThrow(cursor).value
+      const attribute = cursor.readUint8()
+      const typeidx = LEB128.U32.read(cursor).value
 
       tags.push([attribute, typeidx])
     }
@@ -2190,20 +2192,20 @@ export class Instruction {
     public params: Writable[]
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     let size = 1
 
     for (const param of this.params)
-      size += param.sizeOrThrow()
+      size += param.size()
 
     return size
   }
 
-  writeOrThrow(cursor: Cursor) {
-    cursor.writeUint8OrThrow(this.opcode)
+  write(cursor: Cursor) {
+    cursor.writeUint8(this.opcode)
 
     for (const param of this.params)
-      param.writeOrThrow(cursor)
+      param.write(cursor)
 
     return
   }
@@ -2212,8 +2214,8 @@ export class Instruction {
 
 export namespace Instruction {
 
-  export function readOrThrow(cursor: Cursor): Instruction {
-    const opcode = cursor.readUint8OrThrow()
+  export function read(cursor: Cursor): Instruction {
+    const opcode = cursor.readUint8()
 
     switch (opcode) {
       case 0x00:
@@ -2222,72 +2224,72 @@ export namespace Instruction {
       case 0x02:
       case 0x03:
       case 0x04:
-        return new Instruction(opcode, [LEB128.I33.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.I33.read(cursor)])
       case 0x05:
         return new Instruction(opcode, [])
       case 0x08:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0x0a:
         return new Instruction(opcode, [])
       case 0x0b:
         return new Instruction(opcode, [])
       case 0x0c:
       case 0x0d:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0x0e: {
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const labels = new Array<LEB128.U32>()
 
         for (let i = 0; i < count.value; i++)
-          labels.push(LEB128.U32.readOrThrow(cursor))
+          labels.push(LEB128.U32.read(cursor))
 
-        const fallback = LEB128.U32.readOrThrow(cursor)
+        const fallback = LEB128.U32.read(cursor)
 
         return new Instruction(opcode, [count, ...labels, fallback])
       }
       case 0x0f:
         return new Instruction(opcode, [])
       case 0x10:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0x11:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor), LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
       case 0x12:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0x13:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor), LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
       case 0x14:
       case 0x15:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0x1a:
       case 0x1b:
         return new Instruction(opcode, [])
       case 0x1c: {
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const types = new Array<LEB128.U32>()
 
         for (let i = 0; i < count.value; i++)
-          types.push(LEB128.U32.readOrThrow(cursor))
+          types.push(LEB128.U32.read(cursor))
 
         return new Instruction(opcode, [count, ...types])
       }
       case 0x1f: {
-        const blocktype = LEB128.I33.readOrThrow(cursor)
+        const blocktype = LEB128.I33.read(cursor)
 
-        const count = LEB128.U32.readOrThrow(cursor)
+        const count = LEB128.U32.read(cursor)
 
         const catches = new Array<Writable>()
 
         for (let i = 0; i < count.value; i++) {
-          const kind = cursor.readUint8OrThrow()
+          const kind = cursor.readUint8()
 
           catches.push(new U8(kind))
 
           if (kind < 2)
-            catches.push(LEB128.U32.readOrThrow(cursor))
+            catches.push(LEB128.U32.read(cursor))
 
-          catches.push(LEB128.U32.readOrThrow(cursor))
+          catches.push(LEB128.U32.read(cursor))
         }
 
         return new Instruction(opcode, [blocktype, count, ...catches])
@@ -2299,7 +2301,7 @@ export namespace Instruction {
       case 0x24:
       case 0x25:
       case 0x26:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0x28:
       case 0x29:
       case 0x2a:
@@ -2323,18 +2325,18 @@ export namespace Instruction {
       case 0x3c:
       case 0x3d:
       case 0x3e:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor), LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
       case 0x3f:
       case 0x40:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0x41:
-        return new Instruction(opcode, [LEB128.I32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.I32.read(cursor)])
       case 0x42:
-        return new Instruction(opcode, [LEB128.I64.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.I64.read(cursor)])
       case 0x43:
-        return new Instruction(opcode, [F32.readOrThrow(cursor)])
+        return new Instruction(opcode, [F32.read(cursor)])
       case 0x44:
-        return new Instruction(opcode, [F64.readOrThrow(cursor)])
+        return new Instruction(opcode, [F64.read(cursor)])
       case 0x45:
       case 0x46:
       case 0x47:
@@ -2465,19 +2467,19 @@ export namespace Instruction {
       case 0xc4:
         return new Instruction(opcode, [])
       case 0xd0:
-        return new Instruction(opcode, [LEB128.I33.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.I33.read(cursor)])
       case 0xd1:
         return new Instruction(opcode, [])
       case 0xd2:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0xd3:
       case 0xd4:
         return new Instruction(opcode, [])
       case 0xd5:
       case 0xd6:
-        return new Instruction(opcode, [LEB128.U32.readOrThrow(cursor)])
+        return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0xfc: {
-        const subopcode = LEB128.U32.readOrThrow(cursor)
+        const subopcode = LEB128.U32.read(cursor)
 
         switch (subopcode.value) {
           case 0x00:
@@ -2490,25 +2492,25 @@ export namespace Instruction {
           case 0x07:
             return new Instruction(opcode, [subopcode])
           case 0x08:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor), LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
           case 0x09:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
           case 0x0a:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor), LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
           case 0x0b:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
           case 0x0c:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor), LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
           case 0x0d:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
           case 0x0e:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor), LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
           case 0x0f:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
           case 0x10:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
           case 0x11:
-            return new Instruction(opcode, [subopcode, LEB128.U32.readOrThrow(cursor)])
+            return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
         }
 
         throw new Error(`Unknown sub-opcode 0x${subopcode.value.toString(16).padStart(2, "0")}`)
@@ -2527,7 +2529,7 @@ export namespace LEB128 {
       public value: bigint
     ) { }
 
-    sizeOrThrow(): number {
+    size(): number {
       let size = 0
 
       let value = this.value
@@ -2546,7 +2548,7 @@ export namespace LEB128 {
       return size
     }
 
-    writeOrThrow(cursor: Cursor) {
+    write(cursor: Cursor) {
       let value = this.value
 
       do {
@@ -2557,7 +2559,7 @@ export namespace LEB128 {
         if (value !== 0n)
           byte |= 0x80
 
-        cursor.writeUint8OrThrow(byte)
+        cursor.writeUint8(byte)
       } while (value !== 0n)
     }
 
@@ -2565,14 +2567,14 @@ export namespace LEB128 {
 
   export namespace U64 {
 
-    export function readOrThrow(cursor: Cursor): U64 {
+    export function read(cursor: Cursor): U64 {
       let value = 0n
       let shift = 0n
 
       let byte: number
 
       do {
-        byte = cursor.readUint8OrThrow()
+        byte = cursor.readUint8()
 
         value |= (BigInt(byte & 0x7F) << shift)
 
@@ -2595,7 +2597,7 @@ export namespace LEB128 {
       public value: bigint
     ) { }
 
-    sizeOrThrow(): number {
+    size(): number {
       let size = 0
 
       let value = this.value
@@ -2619,7 +2621,7 @@ export namespace LEB128 {
       return size
     }
 
-    writeOrThrow(cursor: Cursor) {
+    write(cursor: Cursor) {
       let value = this.value
 
       let more = true
@@ -2635,7 +2637,7 @@ export namespace LEB128 {
           byte |= 0x80
         }
 
-        cursor.writeUint8OrThrow(byte)
+        cursor.writeUint8(byte)
       }
     }
 
@@ -2643,14 +2645,14 @@ export namespace LEB128 {
 
   export namespace I64 {
 
-    export function readOrThrow(cursor: Cursor): I64 {
+    export function read(cursor: Cursor): I64 {
       let value = 0n
       let shift = 0n
 
       let byte: number
 
       do {
-        byte = cursor.readUint8OrThrow()
+        byte = cursor.readUint8()
 
         value |= (BigInt(byte & 0x7F) << shift)
 
@@ -2676,7 +2678,7 @@ export namespace LEB128 {
       public value: number
     ) { }
 
-    sizeOrThrow(): number {
+    size(): number {
       let size = 0
 
       let value = BigInt(this.value)
@@ -2695,7 +2697,7 @@ export namespace LEB128 {
       return size
     }
 
-    writeOrThrow(cursor: Cursor) {
+    write(cursor: Cursor) {
       let value = BigInt(this.value)
 
       do {
@@ -2706,7 +2708,7 @@ export namespace LEB128 {
         if (value !== 0n)
           byte |= 0x80
 
-        cursor.writeUint8OrThrow(byte)
+        cursor.writeUint8(byte)
       } while (value !== 0n)
     }
 
@@ -2714,14 +2716,14 @@ export namespace LEB128 {
 
   export namespace U32 {
 
-    export function readOrThrow(cursor: Cursor): U32 {
+    export function read(cursor: Cursor): U32 {
       let value = 0n
       let shift = 0n
 
       let byte: number
 
       do {
-        byte = cursor.readUint8OrThrow()
+        byte = cursor.readUint8()
 
         value |= (BigInt(byte & 0x7F) << shift)
 
@@ -2744,7 +2746,7 @@ export namespace LEB128 {
       public value: number
     ) { }
 
-    sizeOrThrow(): number {
+    size(): number {
       let size = 0
 
       let value = BigInt(this.value)
@@ -2768,7 +2770,7 @@ export namespace LEB128 {
       return size
     }
 
-    writeOrThrow(cursor: Cursor) {
+    write(cursor: Cursor) {
       let value = BigInt(this.value)
 
       let more = true
@@ -2784,7 +2786,7 @@ export namespace LEB128 {
           byte |= 0x80
         }
 
-        cursor.writeUint8OrThrow(byte)
+        cursor.writeUint8(byte)
       }
     }
 
@@ -2792,14 +2794,14 @@ export namespace LEB128 {
 
   export namespace I32 {
 
-    export function readOrThrow(cursor: Cursor): I32 {
+    export function read(cursor: Cursor): I32 {
       let value = 0n
       let shift = 0n
 
       let byte: number
 
       do {
-        byte = cursor.readUint8OrThrow()
+        byte = cursor.readUint8()
 
         value |= (BigInt(byte & 0x7F) << shift)
 
@@ -2825,7 +2827,7 @@ export namespace LEB128 {
       public value: number
     ) { }
 
-    sizeOrThrow(): number {
+    size(): number {
       let size = 0
 
       let value = BigInt(this.value)
@@ -2849,7 +2851,7 @@ export namespace LEB128 {
       return size
     }
 
-    writeOrThrow(cursor: Cursor) {
+    write(cursor: Cursor) {
       let value = BigInt(this.value)
 
       let more = true
@@ -2865,7 +2867,7 @@ export namespace LEB128 {
           byte |= 0x80
         }
 
-        cursor.writeUint8OrThrow(byte)
+        cursor.writeUint8(byte)
       }
     }
 
@@ -2873,14 +2875,14 @@ export namespace LEB128 {
 
   export namespace I33 {
 
-    export function readOrThrow(cursor: Cursor): I33 {
+    export function read(cursor: Cursor): I33 {
       let value = 0n
       let shift = 0n
 
       let byte: number
 
       do {
-        byte = cursor.readUint8OrThrow()
+        byte = cursor.readUint8()
 
         value |= (BigInt(byte & 0x7F) << shift)
 
@@ -2908,20 +2910,20 @@ export class U8 {
     public value: number
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return 1
   }
 
-  writeOrThrow(cursor: Cursor) {
-    cursor.writeUint8OrThrow(this.value)
+  write(cursor: Cursor) {
+    cursor.writeUint8(this.value)
   }
 
 }
 
 export namespace U8 {
 
-  export function readOrThrow(cursor: Cursor): U8 {
-    return new U8(cursor.readUint8OrThrow())
+  export function read(cursor: Cursor): U8 {
+    return new U8(cursor.readUint8())
   }
 
 }
@@ -2932,20 +2934,20 @@ export class F32 {
     public value: number
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return 4
   }
 
-  writeOrThrow(cursor: Cursor) {
-    cursor.writeFloat32OrThrow(this.value, true)
+  write(cursor: Cursor) {
+    cursor.writeFloat32(this.value, true)
   }
 
 }
 
 export namespace F32 {
 
-  export function readOrThrow(cursor: Cursor): F32 {
-    return new F32(cursor.readFloat32OrThrow(true))
+  export function read(cursor: Cursor): F32 {
+    return new F32(cursor.readFloat32(true))
   }
 
 }
@@ -2956,20 +2958,20 @@ export class F64 {
     public value: number
   ) { }
 
-  sizeOrThrow(): number {
+  size(): number {
     return 8
   }
 
-  writeOrThrow(cursor: Cursor) {
-    cursor.writeFloat64OrThrow(this.value, true)
+  write(cursor: Cursor) {
+    cursor.writeFloat64(this.value, true)
   }
 
 }
 
 export namespace F64 {
 
-  export function readOrThrow(cursor: Cursor): F64 {
-    return new F64(cursor.readFloat64OrThrow(true))
+  export function read(cursor: Cursor): F64 {
+    return new F64(cursor.readFloat64(true))
   }
 
 }
