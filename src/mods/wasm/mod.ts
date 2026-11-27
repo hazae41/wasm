@@ -2218,6 +2218,7 @@ export namespace Instruction {
     const opcode = cursor.readUint8()
 
     switch (opcode) {
+
       /**
        * Control flow
        */
