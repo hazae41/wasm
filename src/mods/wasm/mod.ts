@@ -2218,23 +2218,26 @@ export namespace Instruction {
     const opcode = cursor.readUint8()
 
     switch (opcode) {
-      // Control flow 
+      /**
+       * Control flow
+       */
+
       case 0x00: // unreachable
         return new Instruction(opcode, [])
       case 0x01: // nop
         return new Instruction(opcode, [])
 
-      case 0x02: // block   (blocktype)
+      case 0x02: // block  (blocktype)
         return new Instruction(opcode, [LEB128.I33.read(cursor)])
-      case 0x03: // loop   (blocktype)
+      case 0x03: // loop  (blocktype)
         return new Instruction(opcode, [LEB128.I33.read(cursor)])
-      case 0x04: // if    (blocktype)
+      case 0x04: // if  (blocktype)
         return new Instruction(opcode, [LEB128.I33.read(cursor)])
 
       case 0x05: // else
         return new Instruction(opcode, [])
 
-      case 0x08: // throw   (tagidx)
+      case 0x08: // throw  (tagidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
 
       case 0x0a: // throw_ref
@@ -2243,9 +2246,9 @@ export namespace Instruction {
       case 0x0b: // end
         return new Instruction(opcode, [])
 
-      case 0x0c: // br    (labelidx)
+      case 0x0c: // br  (labelidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
-      case 0x0d: // br_if   (labelidx)
+      case 0x0d: // br_if  (labelidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
 
       case 0x0e: { // br_table (vec<labelidx> + default labelidx)
@@ -2264,24 +2267,27 @@ export namespace Instruction {
       case 0x0f: // return
         return new Instruction(opcode, [])
 
-      case 0x10: // call       (funcidx)
+      case 0x10: // call    (funcidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
 
-      case 0x11: // call_indirect   (typeidx, tableidx)
+      case 0x11: // call_indirect  (typeidx, tableidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
 
-      case 0x12: // return_call    (funcidx)
+      case 0x12: // return_call  (funcidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
 
       case 0x13: // return_call_indirect (typeidx, tableidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
 
-      case 0x14: // call_ref     (typeidx)
+      case 0x14: // call_ref   (typeidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
-      case 0x15: // return_call_ref  (typeidx)
+      case 0x15: // return_call_ref (typeidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
 
-      // Parametric 
+      /**
+       * Parametric
+       */
+
       case 0x1a: // drop
         return new Instruction(opcode, [])
       case 0x1b: // select
@@ -2333,20 +2339,23 @@ export namespace Instruction {
         return new Instruction(opcode, [blocktype, count, ...catches])
       }
 
-      // Variables 
-      case 0x20: // local.get  (localidx)
+      /**
+       * Variables
+       */
+
+      case 0x20: // local.get (localidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
-      case 0x21: // local.set  (localidx)
+      case 0x21: // local.set (localidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
-      case 0x22: // local.tee  (localidx)
+      case 0x22: // local.tee (localidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0x23: // global.get (globalidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0x24: // global.set (globalidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
-      case 0x25: // table.get  (tableidx)
+      case 0x25: // table.get (tableidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
-      case 0x26: // table.set  (tableidx)
+      case 0x26: // table.set (tableidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
 
       // Memory loads / stores (memarg = align:u32 + offset:u32)
@@ -2402,7 +2411,10 @@ export namespace Instruction {
       case 0x40: // memory.grow (memidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
 
-      // Constants 
+      /**
+       * Constants
+       */
+
       case 0x41: // i32.const
         return new Instruction(opcode, [LEB128.I32.read(cursor)])
       case 0x42: // i64.const
@@ -2412,7 +2424,10 @@ export namespace Instruction {
       case 0x44: // f64.const
         return new Instruction(opcode, [F64.read(cursor)])
 
-      // Numeric operators (no immediates) 
+      /**
+       * Numeric operators
+       */
+
       case 0x45: // i32.eqz
         return new Instruction(opcode, [])
       case 0x46: // i32.eq
@@ -2670,23 +2685,29 @@ export namespace Instruction {
       case 0xc4: // i64.extend32_s
         return new Instruction(opcode, [])
 
-      // Reference types 
-      case 0xd0: // ref.null    (heaptype)
+      /**
+       * Reference types
+       */
+
+      case 0xd0: // ref.null  (heaptype)
         return new Instruction(opcode, [LEB128.I33.read(cursor)])
       case 0xd1: // ref.is_null
         return new Instruction(opcode, [])
-      case 0xd2: // ref.func    (funcidx)
+      case 0xd2: // ref.func  (funcidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0xd3: // ref.eq
         return new Instruction(opcode, [])
       case 0xd4: // ref.as_non_null
         return new Instruction(opcode, [])
-      case 0xd5: // br_on_null   (labelidx)
+      case 0xd5: // br_on_null  (labelidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
       case 0xd6: // br_on_non_null (labelidx)
         return new Instruction(opcode, [LEB128.U32.read(cursor)])
 
-      // 0xFB GC / reference instructions 
+      /**
+       * GC / reference instructions
+       */
+
       case 0xfb: {
         const subopcode = LEB128.U32.read(cursor)
 
@@ -2754,7 +2775,10 @@ export namespace Instruction {
         throw new Error(`Unknown 0xFB sub-opcode 0x${subopcode.value.toString(16)}`)
       }
 
-      // 0xFC saturating trunc / bulk memory / table 
+      /**
+       * saturating trunc / bulk memory / table
+       */
+
       case 0xfc: {
         const subopcode = LEB128.U32.read(cursor)
 
@@ -2777,30 +2801,33 @@ export namespace Instruction {
             return new Instruction(opcode, [subopcode])
           case 0x08: // memory.init (dataidx, memidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
-          case 0x09: // data.drop  (dataidx)
+          case 0x09: // data.drop (dataidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
           case 0x0a: // memory.copy (dst memidx, src memidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
           case 0x0b: // memory.fill (memidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
-          case 0x0c: // table.init  (elemidx, tableidx)
+          case 0x0c: // table.init (elemidx, tableidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
-          case 0x0d: // elem.drop  (elemidx)
+          case 0x0d: // elem.drop (elemidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
-          case 0x0e: // table.copy  (dst tableidx, src tableidx)
+          case 0x0e: // table.copy (dst tableidx, src tableidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor), LEB128.U32.read(cursor)])
-          case 0x0f: // table.grow  (tableidx)
+          case 0x0f: // table.grow (tableidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
-          case 0x10: // table.size  (tableidx)
+          case 0x10: // table.size (tableidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
-          case 0x11: // table.fill  (tableidx)
+          case 0x11: // table.fill (tableidx)
             return new Instruction(opcode, [subopcode, LEB128.U32.read(cursor)])
         }
 
         throw new Error(`Unknown 0xFC sub-opcode 0x${subopcode.value.toString(16)}`)
       }
 
-      // 0xFD SIMD (v128) 
+      /**
+       * SIMD (v128)
+       */
+
       case 0xfd: {
         const subopcode = LEB128.U32.read(cursor)
 
@@ -3294,7 +3321,10 @@ export namespace Instruction {
         throw new Error(`Unknown 0xFD sub-opcode ${subopcode.value}`)
       }
 
-      // 0xFE Atomics 
+      /**
+       * Atomics
+       */
+
       case 0xfe: {
         const subopcode = LEB128.U32.read(cursor)
 
